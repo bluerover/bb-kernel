@@ -869,6 +869,7 @@ am33x_after () {
 	echo "dir: pmic"
 	${git} "${DIR}/patches/pmic/0001-tps65217-Enable-KEY_POWER-press-on-AC-loss-PWR_BUT.patch"
 	${git} "${DIR}/patches/pmic/0002-dt-bone-common-Add-interrupt-for-PMIC.patch"
+	${git} "${DIR}/patches/pmic/0001-Disabled-Press-KEY_POWER-when-AC-not-presen.-Added-p.patch"
 
 	echo "dir: pps"
 	${git} "${DIR}/patches/pps/0001-drivers-pps-clients-pps-gpio.c-convert-to-module_pla.patch"

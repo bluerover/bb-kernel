@@ -1,0 +1,107 @@
+From 9141dbc1b974c110b9264af1f56a355f7f9efdc7 Mon Sep 17 00:00:00 2001
+From: Jimmy Lo <jlo@bluerover.ca>
+Date: Wed, 5 Jul 2017 09:40:42 -0500
+Subject: [PATCH] Disabled Press KEY_POWER when AC not presen. Added parameters
+ acpwr and ntc_error
+
+---
+ drivers/mfd/tps65217.c | 52 +++++++++++++++++++++++++++++++++++++++++---------
+ 1 file changed, 43 insertions(+), 9 deletions(-)
+
+diff --git a/drivers/mfd/tps65217.c b/drivers/mfd/tps65217.c
+index 818f2cd..752dd74 100644
+--- a/drivers/mfd/tps65217.c
++++ b/drivers/mfd/tps65217.c
+@@ -33,6 +33,14 @@
+ #include <linux/mfd/core.h>
+ #include <linux/mfd/tps65217.h>
+ 
++//AC power status
++static int acpwr = 1;
++module_param(acpwr, int, S_IRUGO);
++
++//Battery presence
++static int ntc_error = 1;
++module_param(ntc_error, int, S_IRUGO);
++
+ static struct mfd_cell tps65217s[] = {
+ 	{
+ 		.name = "tps65217-pmic",
+@@ -159,10 +167,12 @@ static const struct of_device_id tps65217_of_match[] = {
+ static irqreturn_t tps65217_irq(int irq, void *irq_data)
+ {
+         struct tps65217 *tps = irq_data;
+-        unsigned int int_reg = 0, status_reg = 0;
++	    unsigned int int_reg = 0, status_reg, charger_config_reg0 = 0;
+ 
+         tps65217_reg_read(tps, TPS65217_REG_INT, &int_reg);
+         tps65217_reg_read(tps, TPS65217_REG_STATUS, &status_reg);
++		tps65217_reg_read(tps, TPS65217_REG_CHGCONFIG0, &charger_config_reg0);
++
+         if (status_reg)
+                 dev_dbg(tps->dev, "status now: 0x%X\n", status_reg);
+ 
+@@ -176,14 +186,24 @@ static irqreturn_t tps65217_irq(int irq, void *irq_data)
+                                 status_reg & TPS65217_STATUS_PB);
+                 input_sync(tps->pwr_but);
+         }
+-        if (int_reg & TPS65217_INT_ACI) {
+-                /* Handle AC power status change */
+-                dev_dbg(tps->dev, "AC power status change\n");
+-                /* Press KEY_POWER when AC not present */
+-                input_report_key(tps->pwr_but, KEY_POWER,
+-                                ~status_reg & TPS65217_STATUS_ACPWR);
+-                input_sync(tps->pwr_but);
+-        }
++		if (int_reg & TPS65217_INT_ACI) {
++			if (status_reg & TPS65217_STATUS_ACPWR)
++				acpwr = 1;
++			else
++				acpwr = 0;
++
++			if (charger_config_reg0 & TPS65217_CHGCONFIG0_BATTEMP)
++				ntc_error = 1;
++			else
++				ntc_error = 0;
++
++	//		/* Handle AC power status change */
++	//		dev_dbg(tps->dev, "AC power status change\n");
++	//		/* Press KEY_POWER when AC not present */
++	//		input_report_key(tps->pwr_but, KEY_POWER,
++	//				~status_reg & TPS65217_STATUS_ACPWR);
++	//		input_sync(tps->pwr_but);
++		}
+         if (int_reg & TPS65217_INT_USBI) {
+                 /* Handle USB power status change */
+                 dev_dbg(tps->dev, "USB power status change\n");
+@@ -243,6 +263,7 @@ static int tps65217_probe(struct i2c_client *client,
+ 	bool status_off = false;
+ 	int irq = -1, irq_gpio = -1;
+ 	int ret;
++	unsigned status_reg, charger_config_reg0 = 0;
+ 
+ 	node = client->dev.of_node;
+ 	if (node) {
+@@ -340,6 +361,19 @@ static int tps65217_probe(struct i2c_client *client,
+ 			(version & TPS65217_CHIPID_CHIP_MASK) >> 4,
+ 			version & TPS65217_CHIPID_REV_MASK);
+ 
++	tps65217_reg_read(tps, TPS65217_REG_STATUS, &status_reg);
++	tps65217_reg_read(tps, TPS65217_REG_CHGCONFIG0, &charger_config_reg0);
++
++	if (status_reg & TPS65217_STATUS_ACPWR)
++		acpwr = 1;
++	else
++		acpwr = 0;
++
++	if (charger_config_reg0 & TPS65217_CHGCONFIG0_BATTEMP)
++		ntc_error = 1;
++	else
++		ntc_error = 0;
++
+ 	return 0;
+ }
+ 
+-- 
+2.7.4
+
