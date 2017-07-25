@@ -163,6 +163,7 @@ am33x () {
 
 	echo "dir: cpufreq"
 	${git} "${DIR}/patches/cpufreq/0001-am33xx-DT-add-commented-out-OPP-values-for-ES2.0.patch"
+	${git} "${DIR}/patches/cpufreq/0001-Prevented-Beaglebone-from-switching-to-26MHz-clock.-.patch"
 
 	echo "dir: adc"
 	${git} "${DIR}/patches/adc/0001-mfd-input-iio-ti_am335x_adc-use-one-structure-for-ti.patch"

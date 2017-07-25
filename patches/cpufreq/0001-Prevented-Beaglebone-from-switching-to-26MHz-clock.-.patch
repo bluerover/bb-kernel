@@ -1,0 +1,33 @@
+From d0e389de93c96bbad2dcc2dcbed5c5b133901432 Mon Sep 17 00:00:00 2001
+From: Jimmy Lo <jlo@bluerover.ca>
+Date: Tue, 25 Jul 2017 15:00:42 -0500
+Subject: [PATCH] Prevented Beaglebone from switching to 26MHz clock. Always
+ use 24MHz clock
+
+---
+ arch/arm/mach-omap2/cclock33xx_data.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-omap2/cclock33xx_data.c b/arch/arm/mach-omap2/cclock33xx_data.c
+index 93d1f8b..5cbefd1 100644
+--- a/arch/arm/mach-omap2/cclock33xx_data.c
++++ b/arch/arm/mach-omap2/cclock33xx_data.c
+@@ -55,9 +55,13 @@ DEFINE_CLK_FIXED_RATE(virt_26000000_ck, CLK_IS_ROOT, 26000000, 0x0);
+ 
+ /* Oscillator clock */
+ /* 19.2, 24, 25 or 26 MHz */
++//static const char *sys_clkin_ck_parents[] = {
++//	"virt_19200000_ck", "virt_24000000_ck", "virt_25000000_ck",
++//	"virt_26000000_ck",
++//};
+ static const char *sys_clkin_ck_parents[] = {
+-	"virt_19200000_ck", "virt_24000000_ck", "virt_25000000_ck",
+-	"virt_26000000_ck",
++	"virt_24000000_ck", "virt_24000000_ck", "virt_24000000_ck",
++	"virt_24000000_ck",
+ };
+ 
+ /*
+-- 
+2.7.4
+
